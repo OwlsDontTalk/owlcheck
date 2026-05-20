@@ -1,5 +1,6 @@
 # 🦉 owl · check
 
+![CI](https://github.com/OwlsDontTalk/owlcheck/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![Pydantic](https://img.shields.io/badge/Pydantic-2-E92063?logo=pydantic&logoColor=white)
 ![pydantic-settings](https://img.shields.io/badge/pydantic--settings-2-E92063)
