@@ -1,0 +1,87 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "owlcheck"
+version = "0.1.0"
+description = "Fail-fast validation of environment-based config for Python apps."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Ivan Miropolskii", email = "miropolskiy.ivan@gmail.com" },
+]
+keywords = [
+    "config",
+    "configuration",
+    "env",
+    "environment",
+    "pydantic",
+    "pydantic-settings",
+    "settings",
+    "validation",
+    "startup",
+    "fail-fast",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+]
+
+[project.urls]
+Homepage = "https://github.com/OwlsDontTalk/owlcheck"
+Repository = "https://github.com/OwlsDontTalk/owlcheck"
+Issues = "https://github.com/OwlsDontTalk/owlcheck/issues"
+Changelog = "https://github.com/OwlsDontTalk/owlcheck/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/owlcheck"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/owlcheck",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "pyproject.toml",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "UP",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
