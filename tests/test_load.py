@@ -112,6 +112,16 @@ def test_module_level_load_accepts_plain_basesettings(monkeypatch):
     assert settings.token == "secret"
 
 
+def test_loaded_settings_are_immutable(monkeypatch):
+    """After load() returns, the contract is locked — settings cannot be mutated."""
+    monkeypatch.setenv("DATABASE_URL", "postgres://localhost/locked")
+    settings = AppSettings.load()
+    with pytest.raises(ValidationError):
+        settings.database_url = "postgres://other"
+    # Verify the original value was not changed.
+    assert settings.database_url == "postgres://localhost/locked"
+
+
 def test_clear_cache_forces_next_load_to_re_read(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgres://localhost/first")
     first = AppSettings.load()
