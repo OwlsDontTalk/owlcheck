@@ -31,7 +31,39 @@ def test_validation_error_message_uses_alias(monkeypatch, caplog):
         with pytest.raises(ValidationError):
             DiagSettings.load()
     assert "REQUIRED_VAR" in caplog.text
-    assert "Configuration validation failed" in caplog.text
+    assert "Process startup aborted" in caplog.text
+
+
+def test_validation_error_includes_field_description(monkeypatch, caplog):
+    monkeypatch.delenv("REQUIRED_VAR", raising=False)
+    with caplog.at_level(logging.ERROR, logger="owlcheck"):
+        with pytest.raises(ValidationError):
+            DiagSettings.load()
+    # The field description is appended so an operator sees what the
+    # missing variable was supposed to do.
+    assert "A required thing." in caplog.text
+    # "missing" should replace pydantic's default "Field required" wording.
+    assert "REQUIRED_VAR: missing" in caplog.text
+
+
+def test_validation_error_header_counts_violations(monkeypatch, caplog):
+    class TwoRequired(owlcheck.Settings):
+        model_config = SettingsConfigDict(
+            env_file=None,
+            case_sensitive=False,
+            extra="allow",
+            populate_by_name=True,
+        )
+
+        first: str = Field(..., alias="FIRST", description="first var")
+        second: str = Field(..., alias="SECOND", description="second var")
+
+    monkeypatch.delenv("FIRST", raising=False)
+    monkeypatch.delenv("SECOND", raising=False)
+    with caplog.at_level(logging.ERROR, logger="owlcheck"):
+        with pytest.raises(ValidationError):
+            TwoRequired.load()
+    assert "2 environment variables required by this application are missing" in caplog.text
 
 
 def test_field_status_logged_by_default(monkeypatch, caplog):

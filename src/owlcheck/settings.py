@@ -86,8 +86,9 @@ def load_or_exit(
         return load(cls, **kwargs)
     except ValidationError:
         print(
-            f"[owlcheck] Configuration is invalid. Aborting startup "
-            f"(exit code {exit_code}). See logs for details.",
+            f"[owlcheck] Process startup aborted: environment is incomplete "
+            f"(exit code {exit_code}). See logs above for the violated "
+            f"contract.",
             file=sys.stderr,
         )
         sys.exit(exit_code)
@@ -162,6 +163,11 @@ class Settings(BaseSettings):
         # Accept overrides passed to load(**kwargs) by the Python field name
         # in addition to the alias. Tests in particular rely on this.
         populate_by_name=True,
+        # The configuration of a running process should not change after
+        # startup. ``frozen=True`` makes any mutation attempt on the loaded
+        # instance raise ``ValidationError``, enforcing the invariant
+        # structurally rather than by convention.
+        frozen=True,
     )
 
     @classmethod
