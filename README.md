@@ -57,7 +57,7 @@ If any required environment variable is missing or invalid, the process exits wi
 * **No partial-config startup.** Validation runs before your application accepts any work. If something required is missing, the process fails immediately with a readable report; it does not run for ten minutes and crash at request time.
 * **One source of truth.** Your `Settings` subclass *is* the schema. Scattered `os.environ.get(...)` calls in handlers, workers, and helpers are explicitly the failure mode `owlcheck` exists to prevent.
 * **Aliased error messages.** Validation errors name the environment variable (the field's alias), not the Python attribute. Operators read `DATABASE_URL: missing (Postgres DSN)`, not `database_url: field required`.
-* **Typo detection in `.env`.** Unknown variables in your `.env` file are surfaced as a warning at startup, then dropped so downstream code cannot accidentally depend on them.
+* **Undeclared `.env` keys are surfaced.** Any variable in your `.env` file that isn't a declared field is reported at startup - that undeclared surface is the failure mode owlcheck exists to remove - and ones that look like a typo of a field name get a "did you mean" hint. (Ambient environment variables aren't pulled in; only keys actually in the file.) Every extra is then dropped so nothing undeclared reaches your code.
 * **Per-field status log.** Each declared field is reported on startup as `provided` (from env or override) or `default`. You always know what configuration the process actually loaded.
 * **Immutable after load.** Once `load_or_exit()` returns, the contract is frozen. Attempts to mutate `settings.x = ...` raise `ValidationError`. The configuration of a running process does not change under the code that depends on it.
 
