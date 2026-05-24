@@ -104,9 +104,10 @@ def test_custom_logger_receives_diagnostics(monkeypatch):
     assert any("REQUIRED_VAR" in m for m in messages)
 
 
-def test_unknown_env_file_entries_emit_warning(monkeypatch, caplog, tmp_path):
+def test_typo_like_extra_emits_warning(monkeypatch, caplog, tmp_path):
+    # DATABAS_URL is one character off DATABASE_URL: an actual typo.
     env_file = tmp_path / ".env.test"
-    env_file.write_text("REQUIRED_VAR=hello\nUNKNOWN_TYPO_VAR=oops\n")
+    env_file.write_text("DATABASE_URL=real\nDATABAS_URL=oops\n")
 
     class WithEnvFile(owlcheck.Settings):
         model_config = SettingsConfigDict(
@@ -116,23 +117,26 @@ def test_unknown_env_file_entries_emit_warning(monkeypatch, caplog, tmp_path):
             populate_by_name=True,
         )
 
-        required_var: str = Field(..., alias="REQUIRED_VAR")
+        database_url: str = Field(..., alias="DATABASE_URL")
 
-    monkeypatch.delenv("REQUIRED_VAR", raising=False)
-    monkeypatch.delenv("UNKNOWN_TYPO_VAR", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.delenv("DATABAS_URL", raising=False)
 
     with caplog.at_level(logging.WARNING, logger="owlcheck"):
         settings = WithEnvFile.load()
 
-    assert settings.required_var == "hello"
-    # pydantic-settings lower-cases keys when case_sensitive=False; the
-    # original name is still recognisable in the warning output.
-    assert "unknown_typo_var" in caplog.text
+    assert settings.database_url == "real"
+    assert "databas_url" in caplog.text
+    # The warning points at the variable it was likely mistyped from.
+    assert "DATABASE_URL" in caplog.text
 
 
-def test_unknown_extras_cleared_after_warning(monkeypatch, caplog, tmp_path):
+def test_undeclared_env_key_warns_without_typo_hint(monkeypatch, caplog, tmp_path):
+    # AWS_REGION in .env is undeclared config, nothing like the declared field:
+    # it is still surfaced (that's the leak owlcheck exists to catch), just
+    # without a "did you mean" hint.
     env_file = tmp_path / ".env.test"
-    env_file.write_text("REQUIRED_VAR=hello\nUNKNOWN_TYPO_VAR=oops\n")
+    env_file.write_text("DATABASE_URL=real\nAWS_REGION=us-east-1\n")
 
     class WithEnvFile(owlcheck.Settings):
         model_config = SettingsConfigDict(
@@ -142,10 +146,37 @@ def test_unknown_extras_cleared_after_warning(monkeypatch, caplog, tmp_path):
             populate_by_name=True,
         )
 
-        required_var: str = Field(..., alias="REQUIRED_VAR")
+        database_url: str = Field(..., alias="DATABASE_URL")
 
-    monkeypatch.delenv("REQUIRED_VAR", raising=False)
-    monkeypatch.delenv("UNKNOWN_TYPO_VAR", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.delenv("AWS_REGION", raising=False)
 
-    settings = WithEnvFile.load()
+    with caplog.at_level(logging.WARNING, logger="owlcheck"):
+        settings = WithEnvFile.load()
+
+    assert "aws_region" in caplog.text
+    assert "did you mean" not in caplog.text
+    assert not settings.model_extra
+
+
+def test_ambient_env_var_is_not_an_extra(monkeypatch, caplog):
+    # A variable that lives only in the ambient environment (never in a .env
+    # file) does not enter model_extra, so it is neither warned about nor cleared.
+    class AmbientSettings(owlcheck.Settings):
+        model_config = SettingsConfigDict(
+            env_file=None,
+            case_sensitive=False,
+            extra="allow",
+            populate_by_name=True,
+        )
+
+        database_url: str = Field(..., alias="DATABASE_URL")
+
+    monkeypatch.setenv("DATABASE_URL", "real")
+    monkeypatch.setenv("SOME_AMBIENT_THING", "x")
+
+    with caplog.at_level(logging.WARNING, logger="owlcheck"):
+        settings = AmbientSettings.load()
+
+    assert "some_ambient_thing" not in caplog.text
     assert not settings.model_extra

@@ -7,6 +7,17 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-05-24
+
+### Changed
+
+- The undeclared-variable warning now adds a typo hint. owlcheck still surfaces
+  every key in `.env` that isn't a declared field (that undeclared surface is
+  the whole point), but for any that closely resembles a declared field's name
+  it now appends the name it was likely mistyped from (`DATABAS_URL (did you
+  mean DATABASE_URL?)`). Ambient environment variables remain out of scope here
+  - only keys present in the file are extras. No API change.
+
 ## [0.2.0] - 2026-05-20
 
 This release sharpens the package's single invariant — *one call at process
